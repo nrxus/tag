@@ -28,15 +28,13 @@ pub enum ActivityLog {
     ProcessExec {
         parent_pid: u16,
     },
-    File {
+    FileCreated {
         path: PathBuf,
-        file_activity: FileActivity,
     },
-}
-
-#[derive(Serialize)]
-pub enum FileActivity {
-    Create,
-    Modify,
-    Delete,
+    FileModified {
+        path: PathBuf,
+    },
+    FileDeleted {
+        path: PathBuf,
+    },
 }

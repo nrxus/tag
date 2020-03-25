@@ -12,9 +12,8 @@ pub fn file(_: &Path, _: &'_ str, _: bool) -> Vec<Log> {
         pid: 1234,
         command_line: "foobar".to_string(),
         process_name: "foobar".to_string(),
-        activity: log::ActivityLog::File {
+        activity: log::ActivityLog::FileCreated {
             path: PathBuf::new(),
-            file_activity: log::FileActivity::Create,
         },
     }]
 }
