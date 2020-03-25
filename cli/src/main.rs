@@ -1,10 +1,10 @@
 #![cfg(unix)]
 
+use std::{fs::File, path::PathBuf};
 use structopt::StructOpt;
-use std::path::PathBuf;
 
 #[derive(Debug, StructOpt)]
-/// (T)elemetry (A)ctivity (G)enerator
+/// (T)elemetry (A)ctivity (G)enerator CLI
 ///
 /// TAG provides subcommands to generate telemetry activity and
 /// generates reports based on the activity generated.
@@ -46,6 +46,15 @@ enum Command {
 }
 
 fn main() {
-    let opt = Command::from_args();
-    println!("{:?}", opt);
+    let logs = match Command::from_args() {
+        Command::File {
+            modify,
+            path,
+            extension,
+        } => tag::file(&path, &extension, modify),
+        Command::Process { exec } => tag::process(exec),
+        Command::Network => vec![tag::network()],
+    };
+    let file = File::create("logs.yaml").expect("could not open `logs.yaml` for creation");
+    serde_yaml::to_writer(file, &logs).expect("could not write to `logs.yaml` after creation");
 }

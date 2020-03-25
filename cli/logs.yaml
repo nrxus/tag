@@ -1,0 +1,9 @@
+---
+- activity_type: File
+  path: ""
+  file_activity: Create
+  time: "2020-03-25T08:08:22.022850734Z"
+  username: foobar
+  pid: 1234
+  command_line: foobar
+  process_name: foobar

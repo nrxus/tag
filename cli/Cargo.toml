@@ -1,0 +1,10 @@
+[package]
+name = "tag-cli"
+version = "0.1.0"
+authors = ["Andres <andresnrx@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+tag = { path = "../tag" }
+structopt = "0.3"
+serde_yaml = "0.8"
