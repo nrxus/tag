@@ -14,7 +14,7 @@ pub struct Log {
 }
 
 #[derive(Serialize)]
-#[serde(tag = "activity_type")]
+#[serde(tag = "activity_type", rename_all = "snake_case")]
 pub enum ActivityLog {
     Network {
         destination: std::net::SocketAddr,
