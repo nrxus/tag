@@ -8,7 +8,7 @@ pub struct Log {
     pub activity: ActivityLog,
     pub time: DateTime<Utc>,
     pub username: String,
-    pub pid: u16,
+    pub pid: u32,
     pub command_line: String,
     pub process_name: String,
 }
@@ -17,9 +17,9 @@ pub struct Log {
 #[serde(tag = "activity_type")]
 pub enum ActivityLog {
     Network {
-        destination: String,
-        source: String,
-        protocol: String,
+        destination: std::net::SocketAddr,
+        source: std::net::SocketAddr,
+        protocol: &'static str,
         data_size: usize,
     },
     ProcessFork {
