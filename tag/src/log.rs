@@ -20,7 +20,7 @@ pub enum ActivityLog {
         destination: std::net::SocketAddr,
         source: std::net::SocketAddr,
         protocol: &'static str,
-        data_size: usize,
+        bytes_sent: usize,
     },
     ProcessFork {
         child_pid: u16,

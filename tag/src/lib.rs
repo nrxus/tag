@@ -58,7 +58,7 @@ pub fn network() -> Log {
             destination: stream.peer_addr().expect("could not get remote address"),
             source: stream.local_addr().expect("could not get local address"),
             protocol: "TCP",
-            data_size: buffer.len(),
+            bytes_sent: buffer.len(),
         },
     }
 }
