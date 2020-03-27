@@ -51,10 +51,13 @@ fn main() {
             modify,
             path,
             extension,
-        } => tag::file(&path, &extension, modify),
-        Command::Process { exec } => tag::process(exec),
-        Command::Network => vec![tag::network()],
+        } => tag::file(&path, &extension, modify).expect("failed to create file activity"),
+        Command::Process { exec } => tag::process(exec).expect("failed to create process activity"),
+        Command::Network => tag::network()
+            .map(|l| vec![l])
+            .expect("failed to create network activity"),
     };
+
     let file = File::create("logs.yaml").expect("could not open `logs.yaml` for creation");
     serde_yaml::to_writer(file, &logs).expect("could not write to `logs.yaml` after creation");
 }
