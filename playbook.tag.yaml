@@ -10,5 +10,5 @@
   path: cli/               # required
   modify: true             # optional - defaults to false
 - activity_type: network   # triggers a network activity
-- activity_type: process   # triggers process activity/activities
+- activity_type: fork      # triggers a fork activity
   exec: true               # optional - defaults to false

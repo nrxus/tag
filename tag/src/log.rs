@@ -22,10 +22,10 @@ pub enum ActivityLog {
         protocol: &'static str,
         bytes_sent: usize,
     },
-    ProcessFork {
+    Fork {
         child_pid: u32,
     },
-    ProcessExec {
+    Exec {
         parent_pid: u32,
     },
     FileCreated {

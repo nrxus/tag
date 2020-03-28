@@ -14,7 +14,7 @@ use structopt::StructOpt;
 /// regressions in your Endpoint Detection and Response (EDR) agents.
 ///
 /// TAG is capable of generating the following types of activities:
-/// file, process, and network. Each of these is its own
+/// file, fork, and network. Each of these is its own
 /// subcommand. Refer to their individual help texts for more
 /// information.
 enum Command {
@@ -37,11 +37,11 @@ enum Command {
         #[structopt(short, long, default_value = "./logs.tag.yaml")]
         log_path: PathBuf,
     },
-    /// Generates process activities
+    /// Generates a fork activity
     ///
     /// Forks the current process and optionally executes a new one
-    Process {
-        /// Flag to execute a new process as part of the fork
+    Fork {
+        /// Flag to execute a process as part of the fork
         #[structopt(short, long)]
         exec: bool,
         /// Path to log file to create
@@ -76,7 +76,7 @@ enum Activity {
         path: PathBuf,
         extension: String,
     },
-    Process {
+    Fork {
         #[serde(default)]
         exec: bool,
     },
@@ -98,7 +98,7 @@ fn main() {
             }],
             log_path,
         ),
-        Command::Process { exec, log_path } => (vec![Activity::Process { exec }], log_path),
+        Command::Fork { exec, log_path } => (vec![Activity::Fork { exec }], log_path),
         Command::Network { log_path } => (vec![Activity::Network], log_path),
         Command::Playbook { playbook, log_path } => {
             let playbook = File::open(playbook).expect("could not open playbook file");
@@ -116,9 +116,7 @@ fn main() {
                 path,
                 extension,
             } => tag::file(&path, &extension, modify).expect("failed to create file activity"),
-            Activity::Process { exec } => {
-                tag::process(exec).expect("failed to create process activity")
-            }
+            Activity::Fork { exec } => tag::fork(exec).expect("failed to create fork activity"),
             Activity::Network => tag::network()
                 .map(|l| vec![l])
                 .expect("failed to create network activity"),

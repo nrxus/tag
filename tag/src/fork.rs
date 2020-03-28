@@ -7,7 +7,7 @@ use chrono::Utc;
 use nix::{sys, unistd};
 use std::ffi::CString;
 
-pub fn process(exec: bool) -> Result<Vec<Log>, Error> {
+pub fn fork(exec: bool) -> Result<Vec<Log>, Error> {
     let fork = unistd::fork().map_err(|e| Error::WaitChild(assume_errno(e)))?;
 
     match fork {
@@ -46,7 +46,7 @@ pub fn process(exec: bool) -> Result<Vec<Log>, Error> {
                 time: fork_time,
                 pid: parent_pid,
                 process_name: current_process_name().map_err(Error::ExecName)?,
-                activity: ActivityLog::ProcessFork { child_pid },
+                activity: ActivityLog::Fork { child_pid },
             }];
 
             if let Some((status, time)) = child_info {
@@ -57,7 +57,7 @@ pub fn process(exec: bool) -> Result<Vec<Log>, Error> {
                         command_line: "/usr/bin/printf ''".into(),
                         pid: child_pid,
                         process_name: "printf".into(),
-                        activity: ActivityLog::ProcessExec { parent_pid },
+                        activity: ActivityLog::Exec { parent_pid },
                     }),
                     _ => return Err(Error::ChildExit),
                 }

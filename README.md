@@ -34,7 +34,7 @@ TAG's purpose is to generate test activy and data to catch any
 regressions in your Endpoint Detection and Response (EDR) agents.
 
 TAG is capable of generating the following types of activities: file,
-process, and network. Each of these is its own subcommand. Refer to
+fork, and network. Each of these is its own subcommand. Refer to
 their individual help texts for more information.
 
 USAGE:
@@ -53,10 +53,10 @@ SUBCOMMANDS:
     help        Prints this message or the help of the given subcommand(s)
     network     Generates a network activity
     playbook    Generates activity based on a given playbook
-    process     Generates process activities
+    fork        Generates a fork activity
 ```
 
-For simple activities you can use the `file`, `network` or `process`
+For simple activities you can use the `file`, `network` or `fork`
 subcommands to generate activity in a "one-shot". Note that this may
 still trigger multiple activities, (e.g. `file` triggers both a create
 file and a delete file activity).
@@ -68,7 +68,7 @@ which accepts a path to a yaml file with a list of activities such as:
 #
 # activity_type can be:
 # * file
-# * process
+# * fork
 # * network
 # these match to the tag-cli subcommands
 #
@@ -77,7 +77,7 @@ which accepts a path to a yaml file with a list of activities such as:
   path: cli/               # required
   modify: true             # optional - defaults to false
 - activity_type: network   # triggers a network activity
-- activity_type: process   # triggers process activity/activities
+- activity_type: fork      # triggers a fork activity
   exec: true               # optional - defaults to false
 ```
 
@@ -119,14 +119,14 @@ A created log for such a playbook would look like:
   pid: 20083
   command_line: target/debug/tag-cli playbook -p playbook.tag.yaml
   process_name: tag-cli
-- activity_type: process_fork
+- activity_type: fork
   child_pid: 20085
   time: "2020-03-28T20:47:26.855513015Z"
   username: andres
   pid: 20083
   command_line: target/debug/tag-cli playbook -p playbook.tag.yaml
   process_name: tag-cli
-- activity_type: process_exec
+- activity_type: exec
   parent_pid: 20083
   time: "2020-03-28T20:47:26.856952077Z"
   username: andres
@@ -143,10 +143,10 @@ A created log for such a playbook would look like:
 heavy lifting of triggering activities. This separation makes `tag`
 itself extendable to other forms of clients in the future.
 
-`tag` exposes 3 functions, `file`, `network`, and `process`. All of
-these functions output one or more `Log` structs or an error if one
-occured. `Log` has all the relevant data for the triggered activity and
-it is ready to be serialized into whatever format a client might
+`tag` exposes 3 functions, `file`, `network`, and `fork`. All of these
+functions output one or more `Log` structs or an error if one
+occured. `Log` has all the relevant data for the triggered activity
+and it is ready to be serialized into whatever format a client might
 need. Note that the timestamp on the various activities are all
 gathered immediately after the activity has been triggered so a delay
 is expected.
@@ -170,18 +170,18 @@ network connections, especially if we ever expand `tag` to allow for
 concurrent tasks. In the future using a server we "own" might be a
 more reliable way to trigger this network activity.
 
-`process` uses a wrapper around [fork(2)] to create a child process
-that may optionally run an `exec` to replace the child process
-image. If no `exec` is being run the child process immediately exits
-with a code of 0 to mark succcess. Otherwise, the child process runs
-`printf` with an empty argument. This was chosen as it is the author's
-belief that `printf` should exist in most `unix` systems. If this
-assumption is proven incorrect or we need to support a `unix` system
-without `printf` pre-installed, we would need to think of a separate
-common command or ship our own no-op binary. `printf` also has the
-advantage of printing nothing if an empty argument is passed, unlike
-`echo` which by default adds a new line. The parent process, in turn,
-will get the fork activity timestamp immediately after the succesful
+`fork` uses a wrapper around [fork(2)] to create a child process that
+may optionally run an `exec` to replace the child process image. If no
+`exec` is being run the child process immediately exits with a code of
+0 to mark succcess. Otherwise, the child process runs `printf` with an
+empty argument. This was chosen as it is the author's belief that
+`printf` should exist in most `unix` systems. If this assumption is
+proven incorrect or we need to support a `unix` system without
+`printf` pre-installed, we would need to think of a separate common
+command or ship our own no-op binary. `printf` also has the advantage
+of printing nothing if an empty argument is passed, unlike `echo`
+which by default adds a new line. The parent process, in turn, will
+get the fork activity timestamp immediately after the succesful
 fork. It will then wait for the child process to exit to avoid leaving
 a zombie process. It will bubble up any non-succesful exits from the
 child process. If the user asked for an `exec` after the fork, the

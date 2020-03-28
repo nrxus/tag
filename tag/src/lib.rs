@@ -3,13 +3,13 @@
 mod log;
 
 pub mod file;
+pub mod fork;
 pub mod network;
-pub mod process;
 
 pub use file::file;
+pub use fork::fork;
 pub use log::{ActivityLog, Log};
 pub use network::network;
-pub use process::process;
 
 fn current_process_name() -> Result<String, ExecNameError> {
     Ok(std::env::current_exe()
