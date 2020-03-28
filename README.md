@@ -201,3 +201,9 @@ helpful messages to the user.
 
 Look at the crate `clap` once v3 is released as it might help make the
 CLI commands a bit cleaner without much work.
+
+Tests, Tests, Tests. Currently neither the CLI app nor the `tag`
+library itself contain any tests. Since most of the code is fairly
+declarative (not much logic) I don't think we need many unit tests but
+some high level tests to verify that is "generally" does the right
+thing for all the activities is needed.
