@@ -6,20 +6,19 @@ use crate::{
 use chrono::Utc;
 use std::{io::Write, time::Duration};
 
-pub fn network() -> Result<Log, NetworkError> {
-    let mut stream =
-        std::net::TcpStream::connect("google.com:80").map_err(NetworkError::Connect)?;
+pub fn network() -> Result<Log, Error> {
+    let mut stream = std::net::TcpStream::connect("google.com:80").map_err(Error::Connect)?;
     stream
         .set_write_timeout(Some(Duration::from_secs(1)))
-        .map_err(NetworkError::SetTimeout)?;
-
-    let time = Utc::now();
+        .map_err(Error::SetTimeout)?;
 
     // some random data
     let buffer = [1, 1, 1, 4];
 
-    stream.write(&buffer).map_err(NetworkError::Write)?;
+    stream.write(&buffer).map_err(Error::Write)?;
 
+    // get time right after we wrote the data
+    let time = Utc::now();
     let command_line = std::env::args().collect::<Vec<String>>().join(" ");
 
     let log = Log {
@@ -27,10 +26,10 @@ pub fn network() -> Result<Log, NetworkError> {
         command_line,
         username: whoami::username(),
         pid: std::process::id(),
-        process_name: current_process_name().map_err(NetworkError::ExecName)?,
+        process_name: current_process_name().map_err(Error::ExecName)?,
         activity: ActivityLog::Network {
-            destination: stream.peer_addr().map_err(NetworkError::RemoteAddr)?,
-            source: stream.local_addr().map_err(NetworkError::LocalAddr)?,
+            destination: stream.peer_addr().map_err(Error::RemoteAddr)?,
+            source: stream.local_addr().map_err(Error::LocalAddr)?,
             protocol: "TCP",
             bytes_sent: buffer.len(),
         },
@@ -40,7 +39,7 @@ pub fn network() -> Result<Log, NetworkError> {
 }
 
 #[derive(Debug)]
-pub enum NetworkError {
+pub enum Error {
     Connect(std::io::Error),
     SetTimeout(std::io::Error),
     Write(std::io::Error),

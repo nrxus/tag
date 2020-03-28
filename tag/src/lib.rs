@@ -1,10 +1,10 @@
 mod log;
-mod network;
-mod process;
+pub mod network;
+pub mod process;
 
 pub use log::Log;
-pub use process::{process};
-pub use network::{network, NetworkError};
+pub use network::network;
+pub use process::process;
 
 use chrono::offset::Utc;
 use std::path::{Path, PathBuf};
@@ -21,8 +21,6 @@ pub fn file(_: &Path, _: &'_ str, _: bool) -> Result<Vec<Log>, ExecNameError> {
         },
     }])
 }
-
-
 
 fn current_process_name() -> Result<String, ExecNameError> {
     Ok(std::env::current_exe()
