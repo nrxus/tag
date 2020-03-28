@@ -1,3 +1,5 @@
+#![cfg(unix)]
+
 mod log;
 
 pub mod file;

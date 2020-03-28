@@ -1,25 +1,14 @@
-- activity_type: file
-  extension: txt
-  modify: true
-  path: cli/
-- activity_type: network
-- activity_type: network
-- activity_type: network
-- activity_type: process
-  exec: true
-- activity_type: network
-- activity_type: network
-- activity_type: process
-- activity_type: network
-- activity_type: file
-  extension: txt
-  path: cli/
-- activity_type: file
-  extension: in
-  path: ./
-- activity_type: file
-  extension: foo
-  path: ./
-- activity_type: file
-  extension: bar
-  path: ./
+#
+# activity_type can be:
+# * file
+# * process
+# * network
+# these match to the tag-cli subcommands
+#
+- activity_type: file      # triggers file activities
+  extension: txt           # required
+  path: cli/               # required
+  modify: true             # optional - defaults to false
+- activity_type: network   # triggers a network activity
+- activity_type: process   # triggers process activity/activities
+  exec: true               # optional - defaults to false
