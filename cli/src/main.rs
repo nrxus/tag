@@ -32,6 +32,11 @@ enum Command {
         /// Extension for the file to create
         #[structopt(short, long)]
         extension: String,
+        /// Path to log file. Defaults to [tag.log.yaml]
+        ///
+        /// If this file already exists it will override its contents
+        #[structopt(short, long, default_value = "./tag.log.yaml")]
+        log_path: PathBuf,
     },
     /// Generates process activities
     ///
@@ -40,24 +45,45 @@ enum Command {
         /// Flag to execute a new process as part of the fork
         #[structopt(short, long)]
         exec: bool,
+        /// Path to log file. Defaults to [tag.log.yaml]
+        ///
+        /// If this file already exists it will override its contents
+        #[structopt(short, long, default_value = "./tag.log.yaml")]
+        log_path: PathBuf,
     },
     /// Generates a network activity
-    Network,
+    Network {
+        /// Path to log file. Defaults to [tag.log.yaml]
+        ///
+        /// If this file already exists it will override its contents
+        #[structopt(short, long, default_value = "./tag.log.yaml")]
+        log_path: PathBuf,
+    },
 }
 
 fn main() {
-    let logs = match Command::from_args() {
+    let (logs, path) = match Command::from_args() {
         Command::File {
             modify,
             path,
             extension,
-        } => tag::file(&path, &extension, modify).expect("failed to create file activity"),
-        Command::Process { exec } => tag::process(exec).expect("failed to create process activity"),
-        Command::Network => tag::network()
-            .map(|l| vec![l])
-            .expect("failed to create network activity"),
+            log_path,
+        } => (
+            tag::file(&path, &extension, modify).expect("failed to create file activity"),
+            log_path,
+        ),
+        Command::Process { exec, log_path } => (
+            tag::process(exec).expect("failed to create process activity"),
+            log_path,
+        ),
+        Command::Network { log_path } => (
+            tag::network()
+                .map(|l| vec![l])
+                .expect("failed to create network activity"),
+            log_path,
+        ),
     };
 
-    let file = File::create("logs.yaml").expect("could not open `logs.yaml` for creation");
-    serde_yaml::to_writer(file, &logs).expect("could not write to `logs.yaml` after creation");
+    let file = File::create(path).expect("could not log file for creation");
+    serde_yaml::to_writer(file, &logs).expect("could not write to log file after creation");
 }
