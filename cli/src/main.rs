@@ -1,5 +1,6 @@
 #![cfg(unix)]
 
+use serde::Deserialize;
 use std::{fs::File, path::PathBuf};
 use structopt::StructOpt;
 
@@ -32,10 +33,8 @@ enum Command {
         /// Extension for the file to create
         #[structopt(short, long)]
         extension: String,
-        /// Path to log file. Defaults to [tag.log.yaml]
-        ///
-        /// If this file already exists it will override its contents
-        #[structopt(short, long, default_value = "./tag.log.yaml")]
+        /// Path to log file to create
+        #[structopt(short, long, default_value = "./logs.tag.yaml")]
         log_path: PathBuf,
     },
     /// Generates process activities
@@ -45,44 +44,86 @@ enum Command {
         /// Flag to execute a new process as part of the fork
         #[structopt(short, long)]
         exec: bool,
-        /// Path to log file. Defaults to [tag.log.yaml]
-        ///
-        /// If this file already exists it will override its contents
-        #[structopt(short, long, default_value = "./tag.log.yaml")]
+        /// Path to log file to create
+        #[structopt(short, long, default_value = "./logs.tag.yaml")]
         log_path: PathBuf,
     },
     /// Generates a network activity
     Network {
-        /// Path to log file. Defaults to [tag.log.yaml]
-        ///
-        /// If this file already exists it will override its contents
-        #[structopt(short, long, default_value = "./tag.log.yaml")]
+        /// Path to log file to create
+        #[structopt(short, long, default_value = "./logs.tag.yaml")]
+        log_path: PathBuf,
+    },
+    /// Generates activity based on a given playbook
+    ///
+    /// Playbooks are YAML files that detail a list of activities
+    Playbook {
+        /// Path to playbook file
+        #[structopt(short, long)]
+        playbook: PathBuf,
+        /// Path to log file to create
+        #[structopt(short, long, default_value = "./logs.tag.yaml")]
         log_path: PathBuf,
     },
 }
 
+#[derive(Deserialize)]
+#[serde(tag = "activity_type", rename_all = "snake_case")]
+enum Activity {
+    File {
+        #[serde(default)]
+        modify: bool,
+        path: PathBuf,
+        extension: String,
+    },
+    Process {
+        #[serde(default)]
+        exec: bool,
+    },
+    Network,
+}
+
 fn main() {
-    let (logs, path) = match Command::from_args() {
+    let (activities, path) = match Command::from_args() {
         Command::File {
             modify,
             path,
             extension,
             log_path,
         } => (
-            tag::file(&path, &extension, modify).expect("failed to create file activity"),
+            vec![Activity::File {
+                modify,
+                path,
+                extension,
+            }],
             log_path,
         ),
-        Command::Process { exec, log_path } => (
-            tag::process(exec).expect("failed to create process activity"),
-            log_path,
-        ),
-        Command::Network { log_path } => (
-            tag::network()
+        Command::Process { exec, log_path } => (vec![Activity::Process { exec }], log_path),
+        Command::Network { log_path } => (vec![Activity::Network], log_path),
+        Command::Playbook { playbook, log_path } => {
+            let playbook = File::open(playbook).expect("could not open playbook file");
+            let activities: Vec<Activity> =
+                serde_yaml::from_reader(&playbook).expect("failed to parse playbook");
+            (activities, log_path)
+        }
+    };
+
+    let logs: Vec<tag::Log> = activities
+        .into_iter()
+        .flat_map(|a| match a {
+            Activity::File {
+                modify,
+                path,
+                extension,
+            } => tag::file(&path, &extension, modify).expect("failed to create file activity"),
+            Activity::Process { exec } => {
+                tag::process(exec).expect("failed to create process activity")
+            }
+            Activity::Network => tag::network()
                 .map(|l| vec![l])
                 .expect("failed to create network activity"),
-            log_path,
-        ),
-    };
+        })
+        .collect();
 
     let file = File::create(path).expect("could not log file for creation");
     serde_yaml::to_writer(file, &logs).expect("could not write to log file after creation");
