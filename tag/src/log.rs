@@ -23,10 +23,10 @@ pub enum ActivityLog {
         bytes_sent: usize,
     },
     ProcessFork {
-        child_pid: u16,
+        child_pid: u32,
     },
     ProcessExec {
-        parent_pid: u16,
+        parent_pid: u32,
     },
     FileCreated {
         path: PathBuf,
