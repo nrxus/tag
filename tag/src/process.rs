@@ -8,8 +8,6 @@ use nix::{sys, unistd};
 use std::ffi::CString;
 
 pub fn process(exec: bool) -> Result<Vec<Log>, Error> {
-    let command_line = std::env::args().collect::<Vec<String>>().join(" ");
-
     let fork = unistd::fork().map_err(|e| Error::WaitChild(assume_errno(e)))?;
 
     match fork {
@@ -43,7 +41,7 @@ pub fn process(exec: bool) -> Result<Vec<Log>, Error> {
             let child_pid = i32::from(child) as u32;
 
             let mut logs = vec![Log {
-                command_line,
+                command_line: std::env::args().collect::<Vec<String>>().join(" "),
                 username: username.clone(),
                 time: fork_time,
                 pid: parent_pid,
