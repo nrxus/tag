@@ -3,8 +3,11 @@ use crate::{
     log::{ActivityLog, Log},
     ExecNameError,
 };
-use chrono::Utc;
-use std::{io::Write, path::Path};
+use chrono::{DateTime, Utc};
+use std::{
+    io::Write,
+    path::{Path, PathBuf},
+};
 use tempfile;
 
 pub fn file(path: &Path, file_type: &'_ str, modify: bool) -> Result<Vec<Log>, Error> {
@@ -23,39 +26,28 @@ pub fn file(path: &Path, file_type: &'_ str, modify: bool) -> Result<Vec<Log>, E
     let create_time = Utc::now();
     let path = tempfile.path().to_path_buf();
 
-    let mut logs = vec![Log {
+    let builder = FileLogBuilder {
         pid,
-        username: username.clone(),
-        command_line: command_line.clone(),
-        process_name: process_name.clone(),
-        time: create_time,
-        activity: ActivityLog::FileCreated { path: path.clone() },
-    }];
+        username,
+        command_line,
+        process_name,
+        path,
+    };
+
+    let mut logs = vec![builder.clone().build(create_time, Activity::Create)];
 
     if modify {
         tempfile.write_all(b"tag").map_err(Error::Write)?;
         tempfile.flush().map_err(Error::Write)?;
-        logs.push(Log {
-            pid,
-            username: username.clone(),
-            command_line: command_line.clone(),
-            process_name: process_name.clone(),
-            time: Utc::now(),
-            activity: ActivityLog::FileModified { path: path.clone() },
-        })
+        let update_time = Utc::now();
+        logs.push(builder.clone().build(update_time, Activity::Modify));
     }
 
     // force the file to be deleted now
     std::mem::drop(tempfile);
+    let delete_time = Utc::now();
 
-    logs.push(Log {
-        username,
-        pid,
-        command_line,
-        process_name,
-        time: Utc::now(),
-        activity: ActivityLog::FileDeleted { path },
-    });
+    logs.push(builder.build(delete_time, Activity::Delete));
 
     Ok(logs)
 }
@@ -65,4 +57,37 @@ pub enum Error {
     Create(std::io::Error),
     ExecName(ExecNameError),
     Write(std::io::Error),
+}
+
+#[derive(Clone)]
+struct FileLogBuilder {
+    username: String,
+    pid: u32,
+    command_line: String,
+    process_name: String,
+    path: PathBuf,
+}
+
+impl FileLogBuilder {
+    pub fn build(self, time: DateTime<Utc>, activity: Activity) -> Log {
+        Log {
+            time,
+            activity: match activity {
+                Activity::Create => ActivityLog::FileCreated { path: self.path },
+                Activity::Modify => ActivityLog::FileModified { path: self.path },
+                Activity::Delete => ActivityLog::FileDeleted { path: self.path },
+            },
+            username: self.username,
+            pid: self.pid,
+            command_line: self.command_line,
+            process_name: self.process_name,
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
+enum Activity {
+    Create,
+    Modify,
+    Delete,
 }
